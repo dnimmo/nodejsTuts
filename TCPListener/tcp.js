@@ -1,3 +1,9 @@
+/*
+
+	A simple TCP listener. Takes requests for "add", "subtract", "multiply", "divide", and "disconnect".
+
+*/
+
 var net = require('net');
 var client_count=0;
 

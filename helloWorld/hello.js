@@ -1,3 +1,9 @@
+/*
+
+	A simple "Hello" program. Takes a name, says hello. Simple.
+
+*/
+
 var rl = require('readline');
 var interface = rl.createInterface(process.stdin, process.stdout, null);
 
