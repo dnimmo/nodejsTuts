@@ -1,6 +1,12 @@
 <!DOCTYPE html>
 <html data-ng-app>
 	<head>
+		<style>
+		body{
+			background-color: #000;
+			color: #fff;
+		}
+		</style>
 		<title>Nimmo's basic socket.io chat application</title>
 	</head>
 	<body data-ng-controller="ChatCtrl" data-ng-cloak>
@@ -26,6 +32,8 @@
 				//Standard socket.io server events
 				socket.on('connect', function(){
 					$('#status').html('Connected to server');
+					//Get nickname
+					socket.emit('set nickname', prompt('Please provide a chat handle'));
 				});
 				socket.on('disconnect', function(){
 					$('#status').html('Disconnected from server');
@@ -40,8 +48,8 @@
 
 				//Callback for my custom defined 'chat' event
 				socket.on('chat', function(client, message){
-					$('#messageHistory').append('<strong>'+client+' said:</strong> <br/>'+message+'<br/>');
-					$('#message').val('');
+						$('#messageHistory').append('<strong>'+client+' said:</strong> <br/>'+message+'<br/>');
+						$('#message').val('');
 				});
 
 				firstConnect = false;

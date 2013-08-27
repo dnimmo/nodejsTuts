@@ -48,6 +48,14 @@ var io = require('socket.io').listen(server);
 io.sockets.on('connection', function(socket){
 	console.log("Connection " + socket.id + " accepted.");
 
+	//Set chat handle
+	socket.on('set nickname', function(name){
+		socket.set('nickname', name, function(){
+			//Emit 'ready' event
+			socket.emit('ready');
+		});
+	});
+
 	//Disconnect event
 	socket.on('disconnect', function(){
 		console.log("Connection " + socket.id + " terminated.");
@@ -55,8 +63,11 @@ io.sockets.on('connection', function(socket){
 
 	//When a message is recieved, broadcast it to all connected clients
 	socket.on('message', function(message){
-		console.log("Received message: "+message+" - from client " + socket.id);
-		//relay message to all connected clients - this is a custom defined event!
-		io.sockets.emit('chat', socket.id, message);
+		//Get nickname from client side
+		socket.get('nickname', function(err, name){
+			console.log("Received message: "+message+" - from client " + name+ " ("+socket.id+")");
+			//relay message to all connected clients - this is a custom defined event!
+			io.sockets.emit('chat', name, message);
+		});
 	});
 });
