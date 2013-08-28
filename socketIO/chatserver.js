@@ -27,6 +27,17 @@ server = http.createServer(function(req, res){
 			});
 		break;
 
+		case '/chatclient.js':
+			fs.readFile(__dirname + '/chatclient.js', function(err, data){
+				if(err){
+					return notFound(res);
+				}
+				res.writeHead(200, {'Content-Type': 'text/javascript'})
+				res.write(data, 'utf8');
+				res.end();
+			});
+		break;
+
 	default: 
 		notFound(res);
 	}
@@ -38,8 +49,8 @@ var notFound = function(res){
 	res.end();
 };
 
-server.listen(8080);
-console.log('Server running at http://127.0.0.1:8080/')
+server.listen(8000);
+console.log('Server running at http://127.0.0.1:8000/')
 
 //Declared down here so that the server address and port only has to be declared in one place
 var io = require('socket.io').listen(server);
@@ -50,10 +61,22 @@ io.sockets.on('connection', function(socket){
 
 	//Set chat handle
 	socket.on('set nickname', function(name){
+
+		//Check current usernames
+		var clients = io.sockets.clients();
+		clients.forEach(function(client){
+			console.log('Username = '+client.nickname);
+		});
 		socket.set('nickname', name, function(){
+			//Set username
+			socket.send('{"success": 1}');
 			//Emit 'ready' event
 			socket.emit('ready');
 		});
+	});
+
+	socket.on('new-user', function(username){
+		console.log('New user connected: '+username)
 	});
 
 	//Disconnect event
