@@ -7,15 +7,25 @@ var connect = function(){
 	if(firstConnect){
 		//Standard socket.io server events
 		socket.on('connect', function(){
-			var username = $('#username').val();
+
 			//Emit new-user event
 			socket.emit('new-user', username);
-
-			$('#status').html('Connected to server');
-			$('#loggedInUser').html(username);
-			//Get nickname
-			socket.emit('set nickname', username);
 		});
+
+		//Check to see if username is available - Callback for my custom 'username-check' event
+		socket.on('username-check', function(status){
+			if(status === true){
+				var username = $('#username').val();
+
+				$('#status').html('Connected to server');
+				$('#loggedInUser').html(username);
+				//Get nickname
+				socket.emit('set nickname', username);
+			} else {
+				$('#status').html('Sorry, the username you requested is taken');					
+			}
+		});
+
 		socket.on('disconnect', function(){
 			$('#status').html('Disconnected from server');
 		});
@@ -29,8 +39,8 @@ var connect = function(){
 
 		//Callback for my custom defined 'chat' event
 		socket.on('chat', function(client, message){
-				$('#messageHistory').append('<strong>'+client+' said:</strong> <br/>'+message+'<br/>');
-				$('#message').val('');
+			$('#messageHistory').append('<strong>'+client+' said:</strong> <br/>'+message+'<br/>');
+			$('#message').val('');
 		});
 
 		firstConnect = false;

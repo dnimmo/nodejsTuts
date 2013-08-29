@@ -5,7 +5,8 @@
 var http = require('http')
   , fs = require('fs')
   , url = require('url')
-  , server;
+  , server
+  , users = [];;
 
 //Create server object
 server = http.createServer(function(req, res){
@@ -57,26 +58,34 @@ var io = require('socket.io').listen(server);
 
 //on connection - this acts on all sockets ('connection' is the event name)
 io.sockets.on('connection', function(socket){
+
 	console.log("Connection " + socket.id + " accepted.");
+	socket.on('new-user', function(name){
+		console.log('new user initiated');
+		users.forEach(function(user){
+			if(user === name){
+				io.sockets.socket(socket.id).emit("username-check", false);
+				console.log('Already a user by this name');
+				return false;
+			} else {
+				io.sockets.socket(socket.id).emit("username-check", true);
+				console.log('No user by this name, proceed');
+			}
+		});
+
+		users.push(name);
+		console.log(users);
+	});
 
 	//Set chat handle
 	socket.on('set nickname', function(name){
 
-		//Check current usernames
-		var clients = io.sockets.clients();
-		clients.forEach(function(client){
-			console.log('Username = '+client.nickname);
-		});
 		socket.set('nickname', name, function(){
 			//Set username
 			socket.send('{"success": 1}');
 			//Emit 'ready' event
 			socket.emit('ready');
 		});
-	});
-
-	socket.on('new-user', function(username){
-		console.log('New user connected: '+username)
 	});
 
 	//Disconnect event
