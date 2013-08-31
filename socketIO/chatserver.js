@@ -6,7 +6,7 @@ var http = require('http')
   , fs = require('fs')
   , url = require('url')
   , server
-  , users = [];;
+  , users = [];
 
 //Create server object
 server = http.createServer(function(req, res){
@@ -61,20 +61,28 @@ io.sockets.on('connection', function(socket){
 
 	console.log("Connection " + socket.id + " accepted.");
 	socket.on('new-user', function(name){
-		console.log('new user initiated');
-		users.forEach(function(user){
-			if(user === name){
-				io.sockets.socket(socket.id).emit("username-check", false);
-				console.log('Already a user by this name');
-				return false;
-			} else {
-				io.sockets.socket(socket.id).emit("username-check", true);
-				console.log('No user by this name, proceed');
-			}
-		});
+		console.log('new user initiated: '+ name);
 
-		users.push(name);
-		console.log(users);
+		var isRegistered = false;
+		console.log('Is Registered: '+ isRegistered);
+
+		for(i=0; i < users.length; i++){
+			if(name == users[i]){
+				console.log("Username already exists");
+				var isRegistered = true;
+				break;
+			}
+		}
+		if(isRegistered == false){
+			console.log('No user by this name, proceed\n New user: ['+name+'] adding to registered users');
+			users.push(name);
+			console.log("Users = "+users);
+			//Return "true" to the username-check event
+			io.sockets.socket(socket.id).emit("username-check", true);
+		} else {
+			//Return "false" to the username-check event
+			io.sockets.socket(socket.id).emit("username-check", false);
+		}
 	});
 
 	//Set chat handle
@@ -93,11 +101,16 @@ io.sockets.on('connection', function(socket){
 		console.log("Connection " + socket.id + " terminated.");
 	});
 
+	//Force disconnect
+	socket.on('disconnecting', function(){
+		socket.disconnect();
+	});
+
 	//When a message is recieved, broadcast it to all connected clients
 	socket.on('message', function(message){
 		//Get nickname from client side
 		socket.get('nickname', function(err, name){
-			console.log("Received message: "+message+" - from client " + name+ " ("+socket.id+")");
+			console.log("Received message: '"+message+"' - from client " + name+ " ("+socket.id+")");
 			//relay message to all connected clients - this is a custom defined event!
 			io.sockets.emit('chat', name, message);
 		});

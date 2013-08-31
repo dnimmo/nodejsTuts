@@ -7,23 +7,34 @@ var connect = function(){
 	if(firstConnect){
 		//Standard socket.io server events
 		socket.on('connect', function(){
+			var tempUsername = $('#username').val()
+			  , username;
 
-			//Emit new-user event
-			socket.emit('new-user', username);
-		});
+			socket.emit('new-user', tempUsername);
+			//Check to see if username is available - Callback for my custom 'username-check' event
+			socket.on('username-check', function(status){
+				if(status == true){
+					username = tempUsername;
 
-		//Check to see if username is available - Callback for my custom 'username-check' event
-		socket.on('username-check', function(status){
-			if(status === true){
-				var username = $('#username').val();
-
-				$('#status').html('Connected to server');
-				$('#loggedInUser').html(username);
-				//Get nickname
-				socket.emit('set nickname', username);
-			} else {
-				$('#status').html('Sorry, the username you requested is taken');					
-			}
+					$('#status').html('Connected to server');
+					$('#loggedInUser').html(username);
+					//Get nickname
+					socket.emit('set nickname', username);
+					//crazy jQuery to make elements visible - fix with Angular!
+					toggleActive('.isLoggedIn', 'inactive', 'active');
+					toggleActive('.usernameLabel', 'active', 'inactive');
+					toggleActive('.messageLabel', 'inactive', 'active');
+					toggleActive('#username', 'active', 'inactive');
+					toggleActive('#message', 'inactive', 'active');
+					toggleActive('#connect', 'active', 'inactive');
+					toggleActive('#send', 'inactive', 'active');
+					toggleActive('#disconnect', 'inactive', 'active');
+					toggleActive('.isLoggedIn', 'inactive', 'active');
+				} else {
+					$('#status').html('Sorry, the username you requested is taken');
+					socket.emit('disconnecting');			
+				}
+			});
 		});
 
 		socket.on('disconnect', function(){
@@ -59,9 +70,8 @@ var send = function(){
 	socket.send($('#message').val());
 }
 
-function ChatCtrl($scope){
-	$scope.isConnected = false;
-	$scope.connection = function(connection){
-		$scope.isConnected = connection;
-	};
+//jQuery function to toggle active classes - to be changed for Angular at some point
+var toggleActive = function(element, class1, class2){
+	$(element).removeClass(class1);
+	$(element).addClass(class2);
 }
