@@ -9,22 +9,35 @@
 		label{
 			display: block;
 		}
-		.active{
-			display: block;
-		}
 		.inactive{
 			display: none;
 		}
 		</style>
 		<title>Nimmo's basic socket.io chat application</title>
 	</head>
-	<body data-ng-cloak>
+	<body>
 		<h1>Socket.io Chat</h1>
 		<p id="status">Choose a username, and then connect to the chat server to start.</p>
-		<p class="isLoggedIn inactive">Signed in as <span id="loggedInUser"></span>.</p>
-		<label class="usernameLabel active">Username:</label><input data-ng-hide="isConnected" id="username"></input>
-		<label class="messageLabel inactive">Message:</label><input id="message" class="inactive"></input>
-		<button id="send" onClick='send()' class="inactive">Send</button>
+		<p id="errorMessage"></p>
+		<div class="username">
+			<label class="usernameLabel">Username:</label>
+			<input id="username"></input>
+		</div>
+		<div id="messaging" class= "inactive">
+			<p class="isLoggedIn">Signed in as <span id="loggedInUser"></span>.</p>
+			<label class="messageLabel">Message:</label><input id="message"></input>
+			<button id="send" onClick='send()'>Send</button>
+			<br/>
+		</div>
+		<br/>
+		<div id="privateMessaging" class="inactive">
+			<h2>Send a private message</h2>
+			<select id="userSelect"></select>
+			<label class="messageLabel">Message:</label><input id="privateMessage"></input>
+			<button id="send" onClick='sendPrivateMessage()'>Send</button>
+			<br/>
+		</div>
+		<br/>
 		<button id="connect" onClick='connect()' class="active">Connect</button>
 		<button id="disconnect" onClick='disconnect()' class="inactive">Disconnect</button>
 		<div id="messageHistory"></div>

@@ -64,7 +64,6 @@ io.sockets.on('connection', function(socket){
 		console.log('new user initiated: '+ name);
 
 		var isRegistered = false;
-		console.log('Is Registered: '+ isRegistered);
 
 		for(i=0; i < users.length; i++){
 			if(name == users[i]){
@@ -74,15 +73,18 @@ io.sockets.on('connection', function(socket){
 			}
 		}
 		if(isRegistered == false){
-			console.log('No user by this name, proceed\n New user: ['+name+'] adding to registered users');
+			console.log('No user by this name, proceed\nNew user: ['+name+'] adding to registered users');
 			users.push(name);
+			//Send list of available users to client
 			console.log("Users = "+users);
 			//Return "true" to the username-check event
 			io.sockets.socket(socket.id).emit("username-check", true);
+			socket.emit('update-user-list', users);
 		} else {
 			//Return "false" to the username-check event
 			io.sockets.socket(socket.id).emit("username-check", false);
 		}
+
 	});
 
 	//Set chat handle
@@ -102,7 +104,8 @@ io.sockets.on('connection', function(socket){
 	});
 
 	//Force disconnect
-	socket.on('disconnecting', function(){
+	socket.on('user-exists', function(){
+		socket.emit('error', "The username you have requested is already in use. Please choose an alternative username.");
 		socket.disconnect();
 	});
 
@@ -113,6 +116,19 @@ io.sockets.on('connection', function(socket){
 			console.log("Received message: '"+message+"' - from client " + name+ " ("+socket.id+")");
 			//relay message to all connected clients - this is a custom defined event!
 			io.sockets.emit('chat', name, message);
+			//emit event to clear this user's input field
+			io.sockets.socket(socket.id).emit('clear');
 		});
 	});
+
+	//TODO: Make this work!
+	socket.on('private-message', function(message){
+		io.sockets.socket[message.to].emit("private", {from: socket.id, to: message.to, msg: message.msg});
+		socket.emit("private", {from: socket.id, to: message.to, msg: message.msg});
+	});
+
+	//Periodically update list of connected users -- TODO: Make this nicer (at present it resets to default option whenever list is refreshed)
+	setInterval(function(){
+		socket.emit('update-user-list', users);
+	}, 15000);
 });
