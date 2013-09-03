@@ -8,9 +8,10 @@ var connect = function(){
 	if(firstConnect){
 		//Standard socket.io server events
 		socket.on('connect', function(){
-			var tempUsername = $('#username').val();
+			var tempUsername = $('#username').val()
+			  , password = $('#password').val();
 
-			socket.emit('new-user', tempUsername);
+			socket.emit('new-user', tempUsername, password);
 			//Check to see if username is available - Callback for my custom 'username-check' event
 			socket.on('username-check', function(status){
 				if(status == true){
@@ -31,6 +32,15 @@ var connect = function(){
 					socket.emit('user-exists');
 				}
 			});
+		});
+
+		socket.on('returning-user', function(passwordMatch){
+			if(passwordMatch){
+				$('#status').html('Welcome back');				
+			} else {
+				$('#status').html('Did you forget your password?');
+			}
+
 		});
 
 		socket.on('disconnect', function(){

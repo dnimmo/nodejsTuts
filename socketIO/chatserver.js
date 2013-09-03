@@ -5,8 +5,62 @@
 var http = require('http')
   , fs = require('fs')
   , url = require('url')
+  , db = require('mongojs').connect('localhost/chatdb', ['chatusers'])
+  , usersCollection = db.collection('chatusers')
   , server
-  , users = [];
+  , users = []
+  , userAdded = true
+  , returningUser = false
+  , passwordMatch = false;
+
+//User object model for database (mongodb)
+function user(username, password){
+	this.username = username;
+	this.password = password;
+	//Example JSON notation of this object: {"username" : "User Name Here", "password" : "Password Here"}
+}
+
+//Function add a user to the database
+function addUser(newUser){
+	usersCollection.save(newUser, function(err, savedUser){
+		if(err || !savedUser){
+			console.log('User: '+newUser.username + ' not saved because of error '+err);
+			userAdded = false;		
+		} else {
+			console.log('User: '+newUser.username+ ' saved to database.');
+			userAdded = true;
+		}
+	});
+}
+
+//Function to find a specific user from the database
+function findUser(user){
+	usersCollection.findOne({username: user.username}, function(err, foundUser){
+		if (err || !foundUser){
+			console.log("User ["+user.username+"] not found.");
+		} 
+		else if(user.password==foundUser.password){
+			console.log("User found: "+foundUser.username);
+			returningUser = true;
+			passwordMatch = true;
+		} else {
+			console.log("User with this name already exists - password mismatch");
+			passwordMatch = false;
+		}
+	});
+}
+
+//Function to change a user's password
+function changePassword(user, newPassword){
+	usersCollection.update({username: user.username}, {$set : { password: newPassword} }, {upsert:false, multi:false}, function(err){
+		if(err){
+			console.log("Error updating: "+err);
+		}
+	});
+}
+
+//Ensure that duplicate usernames are not added to the database
+usersCollection.ensureIndex({username:1}, {unique: true});
 
 //Create server object
 server = http.createServer(function(req, res){
@@ -44,7 +98,7 @@ server = http.createServer(function(req, res){
 	}
 });
 
-var notFound = function(res){
+function notFound (res){
 	res.writeHead(404);
 	res.write('404\n');
 	res.end();
@@ -58,33 +112,35 @@ var io = require('socket.io').listen(server);
 
 //on connection - this acts on all sockets ('connection' is the event name)
 io.sockets.on('connection', function(socket){
-
 	console.log("Connection " + socket.id + " accepted.");
-	socket.on('new-user', function(name){
+
+	socket.on('new-user', function(name, password){
 		console.log('new user initiated: '+ name);
+		var newUser = new user(name, password);
 
-		var isRegistered = false;
-
-		for(i=0; i < users.length; i++){
-			if(name == users[i]){
-				console.log("Username already exists");
-				var isRegistered = true;
-				break;
-			}
-		}
-		if(isRegistered == false){
-			console.log('No user by this name, proceed\nNew user: ['+name+'] adding to registered users');
-			users.push(name);
-			//Send list of available users to client
-			console.log("Users = "+users);
-			//Return "true" to the username-check event
-			io.sockets.socket(socket.id).emit("username-check", true);
-			socket.emit('update-user-list', users);
+		//Check to see if password is greater than 5 characters
+		if(newUser.password.length <= 5){
+			socket.emit('error', "Please enter a password of greater than 5 characters.");
+			socket.disconnect();
 		} else {
-			//Return "false" to the username-check event
-			io.sockets.socket(socket.id).emit("username-check", false);
+			//Add user to database
+			addUser(newUser);
+			findUser(newUser);
+			if(userAdded){
+				//Return "true" to the username-check event
+				io.sockets.socket(socket.id).emit("username-check", true);
+			} else if (returningUser && passwordMatch){
+				io.sockets.socket(socket.id).emit("username-check", true);
+				io.sockets.socket(socket.id).emit("returning-user", true);
+			} else if (returningUser == true && passwordMatch == false){
+				io.sockets.socket(socket.id).emit("returning-user", false);
+			} else {
+				//Return "false" to the username-check event
+				io.sockets.socket(socket.id).emit("username-check", false);		
+			}
+			//TODO: Send list of users to client
+			io.sockets.emit('update-user-list', users);
 		}
-
 	});
 
 	//Set chat handle
