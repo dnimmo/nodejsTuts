@@ -1,0 +1,16 @@
+{
+  "name": "dnimmo-github-test",
+  "version": "0.0.1",
+  "description": "gets repositories for specified user - tutorial from tutplus",
+  "main": "github.js",
+  "dependencies": {
+    "express": "~3.3.1",
+    "underscore": "~1.4.4"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "David Nimmo",
+  "license": "BSD"
+}
